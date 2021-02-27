@@ -9,26 +9,56 @@ class RationalField():
         return Rational(0, 1)
     def coerce(self, x):
         # "coerces" a variable of one type into a Rational
-        # TODO: possibly allow coercion from other types
+        # TODO: possibly allow coercion from more types
         if type(x) is Rational:
             return x
         elif type(x) is int:
             return Rational(x, 1)
+        elif type(x) is float:
+            # This is a bit of a lazy way to do this
+            # Only works with denominators less than 10^7
+            # TODO: Make this better?
+            for i in range(1, 10**7):
+                if int(i*x) == i*x:
+                    return Rational(int(i*x), i)
         else:
             raise ValueError(f"Can't coerce value {x} to Rational.")
+    
+    def __contains__(self, item):
+        if type(item) is not Rational:
+            return False
+        else:
+            return self.__eq__(item.field)
+    
+    def __eq__(self, other):
+        return type(other) is RationalField
+    
+    def __repr__(self):
+        return "the rational numbers"
 
 
 class Rational():
     """Simple implementation of rational numbers"""
     def __init__(self, num, den):
-        # input validation
-        if type(num) is not int or type(den) is not int or den == 0:
-            raise ValueError('num and den must both be integers with nonzero den')
-        
-        # internal values
-        self.num = num
-        self.den = den
         self.field = RationalField()
+
+        # input validation
+        if den == 0:
+            raise ValueError('Denominator cannot be zero.')
+        if int(num) != num or int(den) != den:
+            try:
+                r = self.field.coerce(num/den)
+                self.num = r.num
+                self.den = r.den
+            except ValueError:
+                raise ValueError(f'Could not interpret {num} and {den}'
+                                    ' as numerator and denominator of a rational.')
+        else:
+            if int(den) < 0:
+                self.num = -1*int(num)
+            else:
+                self.num = int(num)
+            self.den = abs(int(den))
 
         # reduce fraction, if possible
         self._reduce()
@@ -58,6 +88,9 @@ class Rational():
 
         return Rational(new_num, new_den)
     
+    def __radd__(self, other):
+        return self.__add__(other)
+    
     def __sub__(self, other):
         # subtraction is addition
         other = self.field.coerce(other)
@@ -74,14 +107,34 @@ class Rational():
 
     def __truediv__(self, other):
         # division is multiplication
-        if other == self.field.zero():
-            return ZeroDivisionError()
+        o = self.field.coerce(other)
+        if o == self.field.zero():
+            raise ZeroDivisionError()
         
-        return self.__mul__(Rational(other.den, other.num))
+        return self.__mul__(Rational(o.den, o.num))
+    
+    def __rtruediv__(self, other):
+        recip = Rational(self.den, self.num)
+        return recip * other
     
     def __pow__(self, n):
-        # TODO: possibly implement this for integer or (some) rational numbers
-        raise NotImplementedError('Exponentiation is not implemented')
+        # TODO: possibly implement this for (some) rational powers
+        if type(n) is Rational and n.den == 1:
+            n  = n.num
+
+        if type(n) is int:
+            power = abs(n)
+            if n < 0:
+                out = Rational(self.den, self.num)
+            else:
+                out = Rational(self.num, self.den)
+        else:
+            raise NotImplementedError('Exponentiation is not implemented for'
+                                      f' type {type(n)}.')
+
+        for _ in range(power - 1):
+            out = out.__mul__(out)
+        return out
     
     def __eq__(self, other):
         # as a special case, we will allow comparison to integers
