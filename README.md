@@ -39,5 +39,19 @@ I have started a few Jupyter notebooks in the [notebooks directory](https://gith
 ## Running Tests
 Unit tests will go in the [tests directory](https://github.com/NicoCourts/groebner/tree/master/tests/). To run them, navigate to anywhere inside the */home/nico/groebner* directory and type `pytest`. You should see a concise output with the status of all tests (there are just 2 at the moment of this writing).
 
+## Project Parts in Need of Some Love
+There are a few possible avenues of things that people can work on. Here is a short
+list along with some rough sense of difficulty (I haven't done these myself so I 
+might be wrong). Difficulties will be given in the form [a/b] where a is the mathematical difficulty and b is the programming difficulty.
+
+- [Basic/Basic] Implement Buchberger's algorithm in `src/algorithms.py` to compute
+a Groebner basis given a list of polynomials that generate some ideal. (**Juan/Smart?**)
+- [??/Moderate?] Implement faster/more efficient algorithms for computing Groebner bases.
+- [Basic/Moderate+] Implement the division algorithm for polynomial rings in multiple indeterminates. Probably should also be in `src/algorithms.py`.
+- [Moderate/Moderate+] Implement new fields to have polynomials over (these should inherit from the `Field` class).
+- [Moderate/Moderate+] Continue to flush out implementations for ideals so that they 
+work as expected to the end user. (**Nico**)
+- [Trivial/Moderate] Write unit tests for everything to be tested against. (**Nico**)
+
 ## Questions/Comments
 These are always welcome. Shoot me an email or pop on the discord any time to talk.
