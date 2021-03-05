@@ -188,12 +188,23 @@ class Polynomial(RingElement):
     
     def __repr__(self):
         s = ''
+        first = True
         for i, coef in reversed(list(enumerate(self.coefs))):
             if coef != 0:
+                if first:
+                    if coef == -1:
+                        s += '-'
+                    elif coef != 1: 
+                        s += str(coef)
+                    first = False
+                else:
+                    if coef > 0:
+                        s += ' + '
+                    else:
+                        s += ' - '
+                    
+                    if abs(coef) != 1 or i == 0:
+                        s += str(abs(coef))
                 m = self.order.idx_to_monomial(i)
-                if (coef != 1 and coef != -1) or i == 0:
-                    s += str(coef) 
-                elif coef == -1:
-                    s += '-'
-                s += str(m) + " + "
-        return s[:-3]
+                s += str(m)
+        return s

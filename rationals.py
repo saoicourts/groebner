@@ -117,6 +117,39 @@ class Rational(FieldElement):
             return False
         
         return self.num*other.den == self.den*other.num
+    
+    # QQ is totally ordered
+    def __lt__(self, other):
+        o = self.field.coerce(other)
+        return self.num*o.den < self.den*o.num
+    
+    def __le__(self, other):
+        return self.__lt__(other) or self.__eq__(other)
+    
+    def __gt__(self, other):
+        o = self.field.coerce(other)
+        return self.num*o.den > self.den*o.num
+    
+    def __ge__(self, other):
+        return self.__gt__(other) or self.__eq__(other)
+    
+    # This works as normal
+    def __abs__(self):
+        return Rational(abs(self.num), self.den)
+    
+    # add some coercions to numeric types:
+    def __int__(self):
+        # the more pythonic thing would probably be to just convert blindly
+        #   but I am afraid of silent lossy conversion
+        self._reduce()
+        if self.den == 1:
+            return self.num
+        else:
+            raise ValueError(f'Rational {self} cannot be losslessly'
+                             ' coerced to int.')
+    
+    def __float__(self):
+        return float(self.num)/self.den
 
     def __repr__(self):
         # returns a string representation of this fraction

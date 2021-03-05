@@ -1,4 +1,5 @@
 from rings import RingElement
+from algorithms import buchberger
 
 
 class Ideal:
@@ -43,3 +44,11 @@ class IdealFromGenerators(Ideal):
     def intersect(self, other):
         # TODO: this
         raise NotImplementedError
+
+class GroebnerIdeal(IdealFromGenerators):
+    """An ideal given by generators that form a Groebner basis"""
+    def __init__(self, gens):
+        # use some algorithm to compute a Groebner basis from the given gens
+        self.basis = buchberger(gens)
+
+        super().__init__(self.basis)
