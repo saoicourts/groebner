@@ -34,7 +34,7 @@ Once you have your tools in place and the code copied to your computer (let's sa
     - You can test this by typing `python` and then typing `import groebner` into the prompt. There should be no errors. Typing `groebner.QQ` should print the string `the rational numbers`. Type `exit()` to leave the REPL.
 
 ## Running Example Notebooks
-I have started a few Jupyter notebooks in the [notebooks directory](https://github.com/NicoCourts/groebner/tree/master/notebooks/). To run them, navigate to */home/nico/groebner* (or any directory above it) and type `jupyter lab`. You should either see a link to follow or a browser will automatically open with the interface. From there you can choose which notebook to run and execute the code yourself.
+I have started a few Jupyter notebooks in the [notebooks directory](https://github.com/NicoCourts/groebner/tree/master/notebooks/). To run them, navigate to */home/nico/groebner* (or any directory above it) and type `jupyter lab`. **If you have just installed jupyterlab, you may have to restart your terminal before this works.** You should either see a link to follow or a browser will automatically open with the interface. From there you can choose which notebook to run and execute the code yourself.
 
 ## Running Tests
 Unit tests will go in the [tests directory](https://github.com/NicoCourts/groebner/tree/master/tests/). To run them, navigate to anywhere inside the */home/nico/groebner* directory and type `pytest`. You should see a concise output with the status of all tests (there are just 2 at the moment of this writing).
