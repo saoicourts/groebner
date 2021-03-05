@@ -1,7 +1,10 @@
-class RationalField():
+from fields import Field, FieldElement
+
+
+class RationalField(Field):
     """The rational number field, QQ"""
     def __init__(self):
-        pass
+        super().__init__("the rational numbers", Rational)
 
     def one(self):
         return Rational(1, 1)
@@ -24,41 +27,35 @@ class RationalField():
         else:
             raise ValueError(f"Can't coerce value {x} to Rational.")
     
-    def __contains__(self, item):
-        if type(item) is not Rational:
-            return False
-        else:
-            return self.__eq__(item.field)
-    
     def __eq__(self, other):
         return type(other) is RationalField
-    
-    def __repr__(self):
-        return "the rational numbers"
 
 
-class Rational():
+class Rational(FieldElement):
     """Simple implementation of rational numbers"""
     def __init__(self, num, den):
         self.field = RationalField()
+        super().__init__(self.field)
 
         # input validation
         if den == 0:
             raise ValueError('Denominator cannot be zero.')
-        if int(num) != num or int(den) != den:
+        try:
+            assert int(num) == num and int(den) == den
+            num, den = int(num), int(den)
+            if int(den) < 0:
+                self.num = -1*int(num)
+            else:
+                self.num = int(num)
+            self.den = abs(int(den))
+        except (ValueError, AssertionError):
             try:
                 r = self.field.coerce(num/den)
                 self.num = r.num
                 self.den = r.den
             except ValueError:
                 raise ValueError(f'Could not interpret {num} and {den}'
-                                    ' as numerator and denominator of a rational.')
-        else:
-            if int(den) < 0:
-                self.num = -1*int(num)
-            else:
-                self.num = int(num)
-            self.den = abs(int(den))
+                                 ' as numerator and denominator of a rational.')
 
         # reduce fraction, if possible
         self._reduce()
@@ -66,6 +63,11 @@ class Rational():
     ####################
     # Internal methods #
     ####################
+
+    def mul_inv(self):
+        if self.den == self.field.zero():
+            raise ZeroDivisionError
+        return Rational(self.den, self.num)
     
     def _reduce(self):
         g = self._gcd(self.num, self.den)
@@ -88,61 +90,30 @@ class Rational():
 
         return Rational(new_num, new_den)
     
-    def __radd__(self, other):
-        return self.__add__(other)
-    
-    def __sub__(self, other):
-        # subtraction is addition
-        other = self.field.coerce(other)
-        return self + (-1)*other
-    
     def __mul__(self, other):
         # multiply self with other and return a new instance
-        other = self.field.coerce(other)
-        return Rational(self.num*other.num, self.den*other.den)
-    
-    def __rmul__(self, other):
-        # sometimes I want my rational to be on the *right* but we're commutative
-        return self.__mul__(other)
+        try:
+            other = self.field.coerce(other)
+            return Rational(self.num*other.num, self.den*other.den)
+        except:
+            try: 
+                return other.__rmul__(self)
+            except:
+                raise TypeError('No acceptable definition of multiplication')
 
     def __truediv__(self, other):
         # division is multiplication
         o = self.field.coerce(other)
         if o == self.field.zero():
-            raise ZeroDivisionError()
+            raise ZeroDivisionError
         
-        return self.__mul__(Rational(o.den, o.num))
-    
-    def __rtruediv__(self, other):
-        recip = Rational(self.den, self.num)
-        return recip * other
-    
-    def __pow__(self, n):
-        # TODO: possibly implement this for (some) rational powers
-        if type(n) is Rational and n.den == 1:
-            n  = n.num
-
-        if type(n) is int:
-            power = abs(n)
-            if n < 0:
-                out = Rational(self.den, self.num)
-            else:
-                out = Rational(self.num, self.den)
-        else:
-            raise NotImplementedError('Exponentiation is not implemented for'
-                                      f' type {type(n)}.')
-
-        for _ in range(power - 1):
-            out = out.__mul__(out)
-        return out
+        return self.__mul__(o.mul_inv())
     
     def __eq__(self, other):
-        # as a special case, we will allow comparison to integers
-        if type(other) is int:
+        try:
             other = self.field.coerce(other)
-
-        # otherwise if they are not the right type, they are not equal
-        if type(other) is not Rational:
+        except ValueError:
+            # silently return false
             return False
         
         return self.num*other.den == self.den*other.num

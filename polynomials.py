@@ -1,8 +1,9 @@
 from rationals import RationalField as QQ
 from monomials import MonomialOrdering, Monomial
+from rings import Ring, RingElement
 
 
-class PolynomialRing():
+class PolynomialRing(Ring):
     """Represents a polynomial in some number of variables over a variety of
         fields. For base field use 'QQ', 'RR', 'CC', or an integer p designating
         the prime field F_p."""
@@ -56,8 +57,16 @@ class PolynomialRing():
             ret.append(Polynomial(coef, self))
 
         return ret
-
-    # internal methods
+    
+    def coerce(self, x):
+        # "coerces" a variable of one type into a polynomial
+        # TODO: possibly allow coercion from more types
+        if type(x) is Polynomial:
+            return x
+        elif type(x) is int or type(x) is float:
+            return Polynomial([self.field.coerce(x)], self)
+        else:
+            raise ValueError(f"Can't coerce value {x} to Polynomial.")
 
     def __repr__(self):
         return f'Polynomial ring over {self.field} with indeterminates {list(self.vars.values())}.'
@@ -73,7 +82,7 @@ class PolynomialRing():
         return (self.field == other.field and self.ordering == other.ordering)
 
 
-class Polynomial():
+class Polynomial(RingElement):
     """Represents a polynomial in some polynomial ring"""
     def __init__(self, coefs, parent_ring):
         # input validation
@@ -90,6 +99,9 @@ class Polynomial():
         self.ring = parent_ring
         self.coefs = coefs
         self.order = parent_ring.ordering
+    
+    def copy(self):
+        return Polynomial(self.coefs, self.ring)
 
     # internal methods
 
@@ -131,16 +143,12 @@ class Polynomial():
         return diffs == 0
     
     def __add__(self, other):
-        summand = self.ring.one()*other
-        try:
-            summand = self.ring.one()*other
-        except:
-            raise TypeError(f'Object of type {type(other)} cannot be coerced to Polynomial.')
-
+        summand = self.ring.coerce(other)
+        
         # fill out lists to make them compatible
         length = max(len(self.coefs), len(summand.coefs))
-        self.coefs += [0]*(length - len(self.coefs))
-        summand.coefs += [0]*(length - len(summand.coefs))
+        self.coefs += [self.field.zero()]*(length - len(self.coefs))
+        summand.coefs += [self.field.zero()]*(length - len(summand.coefs))
         return Polynomial(
             [self.coefs[i] + summand.coefs[i] for i in range(length)],
             self.ring
@@ -161,37 +169,31 @@ class Polynomial():
         return ret
     
     def __mul__(self, other):
-        if type(other) is Polynomial:
-            # TODO: there is probably a faster way to do this using degree
-            new_lead = self._leading_monomial() * other._leading_monomial()
-            coefs = [self.field.zero() for _ in range(new_lead.to_idx() + 1)]
-            for i, c in enumerate(self.coefs):
-                if c != 0:
-                    for j, d in enumerate(other.coefs):
-                        if d != 0:
-                            mon1 = self.order.idx_to_monomial(i)
-                            mon2 = self.order.idx_to_monomial(j)
-                            target_idx = (mon1 * mon2).to_idx()
-                            coefs[target_idx] += c * d
-            return Polynomial(coefs, self.ring)
-
-        else:
-            try:
-                mult = self.field.one()*other
-                coefs = [x*mult for x in self.coefs]
-                return Polynomial(coefs, self.ring)
-            except:
-                raise TypeError(f'Could not coerce {other} to {type(self.field)}.')
+        p = self.ring.coerce(other)
+        # TODO: there is probably a faster way to do this using degree
+        new_lead = self._leading_monomial() * p._leading_monomial()
+        coefs = [self.field.zero() for _ in range(new_lead.to_idx() + 1)]
+        for i, c in enumerate(self.coefs):
+            if c != self.field.zero():
+                for j, d in enumerate(p.coefs):
+                    if d != self.field.zero():
+                        mon1 = self.order.idx_to_monomial(i)
+                        mon2 = self.order.idx_to_monomial(j)
+                        target_idx = (mon1 * mon2).to_idx()
+                        coefs[target_idx] += c * d
+        return Polynomial(coefs, self.ring)
     
     def __rmul__(self, other):
         return self.__mul__(other)
     
     def __repr__(self):
         s = ''
-        for i, coef in enumerate(self.coefs):
+        for i, coef in reversed(list(enumerate(self.coefs))):
             if coef != 0:
                 m = self.order.idx_to_monomial(i)
-                if coef != 1 or i == 0:
+                if (coef != 1 and coef != -1) or i == 0:
                     s += str(coef) 
+                elif coef == -1:
+                    s += '-'
                 s += str(m) + " + "
         return s[:-3]
