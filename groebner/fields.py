@@ -1,4 +1,4 @@
-from rings import Ring, RingElement
+from groebner.rings import Ring, RingElement
 
 
 class Field(Ring):

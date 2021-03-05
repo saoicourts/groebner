@@ -1,5 +1,5 @@
-from rings import RingElement
-from algorithms import buchberger
+from groebner.rings import RingElement
+from groebner.algorithms import buchberger
 
 
 class Ideal:

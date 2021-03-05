@@ -1,4 +1,4 @@
-from fields import Field, FieldElement
+from groebner.fields import Field, FieldElement
 
 
 class RationalField(Field):

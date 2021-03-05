@@ -1,6 +1,6 @@
-from rationals import RationalField as QQ
-from monomials import MonomialOrdering, Monomial
-from rings import Ring, RingElement
+from groebner.rationals import RationalField as QQ
+from groebner.monomials import MonomialOrdering, Monomial
+from groebner.rings import Ring, RingElement
 
 
 class PolynomialRing(Ring):

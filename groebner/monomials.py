@@ -14,6 +14,14 @@ class MonomialOrdering():
                 self.var_labels.append(f'x_{i}')
         else:
             self.var_labels = labels
+        
+        if order_type == 'grlex':
+            self.idx_to_monomial = self._idx_to_mon_grlex
+            self.monomial_to_idx = self._mon_to_idx_grlex
+        else:
+            raise NotImplementedError('Only implemented for "grlex" ordering.')
+        
+        # TODO Implement grevlex, which should be faster.
 
         # always assume variables have decreasing order
         # x_1 > x_2 > x_3 > ... > x_n
@@ -28,7 +36,11 @@ class MonomialOrdering():
             vars[self.var_labels[i]] = Monomial(lst, self)
         return vars
     
-    def idx_to_monomial(self, idx):
+    def _mon_to_idx_grlex(self, mon):
+        #TODO 
+        pass
+
+    def _idx_to_mon_grlex(self, idx):
         try:
             idx = int(idx)
         except:
@@ -93,6 +105,7 @@ class Monomial():
         self.total_degree = sum(degrees)
         self.order = order
         self.num_vars = self.order.num_vars
+        # TODO self.to_idx = self.order.monomial_to_idx
     
     def to_idx(self):
         # automatically validates the input
