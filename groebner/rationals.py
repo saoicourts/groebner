@@ -1,4 +1,5 @@
 from groebner.fields import Field, FieldElement
+from warnings import warn
 
 
 class RationalField(Field):
@@ -21,6 +22,13 @@ class RationalField(Field):
             # This is a bit of a lazy way to do this
             # Only works with denominators less than 10^7
             # TODO: Make this better?
+            warn(
+                "Coercing to Rational from float is inherently inexact and will "
+                "be incorrect for large numerators and denominators. If you "
+                "need to have certainty the values are correct, you should "
+                "directly instantiate with Rational(num, den) with integers.",
+                RuntimeWarning
+            )
             for i in range(1, 10**7):
                 if int(i*x) == i*x:
                     return Rational(int(i*x), i)
@@ -39,7 +47,7 @@ class Rational(FieldElement):
 
         # input validation
         if den == 0:
-            raise ValueError('Denominator cannot be zero.')
+            raise ZeroDivisionError('Denominator cannot be zero.')
         try:
             assert int(num) == num and int(den) == den
             num, den = int(num), int(den)

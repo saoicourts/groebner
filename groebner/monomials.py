@@ -1,4 +1,5 @@
 from math import factorial
+from warnings import warn
 
 
 class MonomialOrdering():
@@ -13,7 +14,12 @@ class MonomialOrdering():
             for i in range(num_vars):
                 self.var_labels.append(f'x_{i}')
         else:
-            self.var_labels = labels
+            # if the user does something silly here it might not look great,
+            #   but shouldn't break things.
+            if type(labels) is not list:
+                self.var_labels = [str(labels)]
+            else:
+                self.var_labels = list(map(str, labels))
         
         if order_type == 'grlex':
             self.idx_to_monomial = self._idx_to_mon_grlex
@@ -108,6 +114,7 @@ class Monomial():
         # TODO self.to_idx = self.order.monomial_to_idx
     
     def to_idx(self):
+        # TODO remove this once implemented in the ordering
         # automatically validates the input
         base = self.degrees[:]
         total_degree = sum(base)

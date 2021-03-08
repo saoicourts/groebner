@@ -157,6 +157,9 @@ class Polynomial(RingElement):
     def __sub__(self, other):
         return self.__add__(-1*other)
     
+    def __neg__(self):
+        return -1*self
+    
     def __pow__(self, power):
         try:
             power = int(power)
