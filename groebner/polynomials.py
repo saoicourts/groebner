@@ -1,6 +1,7 @@
 from groebner.rationals import RationalField as QQ
 from groebner.monomials import MonomialOrdering, Monomial
 from groebner.rings import Ring, RingElement
+from random import randint
 
 
 class PolynomialRing(Ring):
@@ -46,6 +47,18 @@ class PolynomialRing(Ring):
     
     def zero(self):
         return Polynomial([self.field.zero()]*self.num_vars, self)
+    
+    def random(self, deg=None, denominator_bound=100):
+        if deg is None:
+            deg = randint(0, 20)
+        coefs = [self.field.random(bound=denominator_bound) for _ in range(deg)]
+
+        # Just for fun, randomly zero out coefficients
+        for i in range(deg):
+            if randint(0, 2) == 0:
+                coefs[i] = self.field.zero()
+        
+        return Polynomial(coefs, self)
 
     def get_vars(self):
         # wrap monomials in polynomial wrappers

@@ -1,3 +1,4 @@
+from random import randint
 from groebner.fields import Field, FieldElement
 from warnings import warn
 
@@ -9,8 +10,17 @@ class RationalField(Field):
 
     def one(self):
         return Rational(1, 1)
+
     def zero(self):
         return Rational(0, 1)
+        
+    def random(self, bound=10**10):
+        # returns a "random" (for some definition of random) rational
+        # between 0 and 1
+        den = randint(1, bound)
+        num = randint(0, den)
+        return Rational(num, den)
+
     def coerce(self, x):
         # "coerces" a variable of one type into a Rational
         # TODO: possibly allow coercion from more types
