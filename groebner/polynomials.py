@@ -63,6 +63,12 @@ class PolynomialRing(Ring):
         # TODO: possibly allow coercion from more types
         if type(x) is Polynomial:
             return x
+        elif x in self.field:
+            return Polynomial([x], self)
+        elif type(x) is Monomial:
+            idx = x.to_idx()
+            coefs = [self.field.zero()]*idx + [self.field.one()]
+            return Polynomial(coefs, self)
         elif type(x) is int or type(x) is float:
             return Polynomial([self.field.coerce(x)], self)
         else:
@@ -103,8 +109,6 @@ class Polynomial(RingElement):
     def copy(self):
         return Polynomial(self.coefs, self.ring)
 
-    # internal methods
-
     def _reduce(self):
         # Reduces the list to have minimal number of entries
         # amounts to unnecessary computation most of the time, but could save
@@ -121,12 +125,23 @@ class Polynomial(RingElement):
         self._reduce()
         return len(self.coefs)
     
-    def _leading_monomial(self):
+    def multidegree(self):
+        self._reduce()
+        return self.LM().degrees
+    
+    def LM(self):
+        # Leading monomial
         self._reduce()
         return self.order.idx_to_monomial(len(self.coefs) - 1)
     
-    def _leading_idx(self):
-        return self._leading_monomial().to_idx()
+    def LC(self):
+        self._reduce()
+        return self.coefs[-1]
+    
+    def LT(self):
+        self._reduce()
+        coefs = [self.field.zero()]*(len(self.coefs)-1) + [self.coefs[-1]]
+        return Polynomial(coefs, self.ring)
 
     def __eq__(self, other):
         if type(other) is not Polynomial:
@@ -174,7 +189,7 @@ class Polynomial(RingElement):
     def __mul__(self, other):
         p = self.ring.coerce(other)
         # TODO: there is probably a faster way to do this using degree
-        new_lead = self._leading_monomial() * p._leading_monomial()
+        new_lead = self.LM() * p.LM()
         coefs = [self.field.zero() for _ in range(new_lead.to_idx() + 1)]
         for i, c in enumerate(self.coefs):
             if c != self.field.zero():
@@ -197,6 +212,8 @@ class Polynomial(RingElement):
                 if first:
                     if coef == -1:
                         s += '-'
+                    elif coef == 1 and i == 0:
+                        s += '1'
                     elif coef != 1: 
                         s += str(coef)
                     first = False
