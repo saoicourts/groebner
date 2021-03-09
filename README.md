@@ -44,14 +44,14 @@ There are a few possible avenues of things that people can work on. Here is a sh
 list along with some rough sense of difficulty (I haven't done these myself so I 
 might be wrong). Difficulties will be given in the form [a/b] where a is the mathematical difficulty and b is the programming difficulty.
 
-- [Basic/Basic] Implement Buchberger's algorithm in `src/algorithms.py` to compute
+- [Basic+/Moderate] Implement Buchberger's algorithm in `src/algorithms.py` to compute
 a Groebner basis given a list of polynomials that generate some ideal. (**Juan/Smart?**)
 - [??/Moderate?] Implement faster/more efficient algorithms for computing Groebner bases.
 - [Basic/Moderate] Implement grevlex (and possibly other) orderings.
-- [Basic/Basic+] Add useful methods to the `Polynomial` class for use in division and Groebner basis computations.
-- [Basic+/Moderate+] Implement the division algorithm for polynomial rings in multiple indeterminates. Probably should also be in `src/algorithms.py`.
+- ~~[Basic/Basic+] Add useful methods to the `Polynomial` class for use in division and Groebner basis computations~~.
+- ~~[Basic+/Moderate] Implement the division algorithm for polynomial rings in multiple indeterminates. Probably should also be in `src/algorithms.py`~~.
 - [Moderate/Moderate+] Implement new fields to have polynomials over (these should inherit from the `Field` class).
-- [Moderate/Moderate+] Continue to flush out implementations for ideals so that they work as expected to the end user. (**Nico**)
+- [Moderate+/Moderate+] Continue to flush out implementations for ideals so that they work as expected to the end user.
 - [Trivial/Moderate] Write unit tests for everything to be tested against. (**Nico**)
     - `rationals` **complete**
     - `monomials` **complete**
