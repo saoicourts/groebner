@@ -184,6 +184,10 @@ class Monomial():
                 if self.degrees[i] > 1:
                     s += '^' + str(self.degrees[i])
         return s
+    
+    def __hash__(self):
+        # let's just punt to tuples
+        return tuple(self.degrees).__hash__()
 
     def _choose(self, n, k):
         return factorial(n)/(factorial(k)*factorial(n-k))

@@ -9,7 +9,7 @@ class PolynomialRing(Ring):
         fields. For base field use 'QQ', 'RR', 'CC', or an integer p designating
         the prime field F_p."""
 
-    def __init__(self, num_vars=1, labels=None, base_field='QQ'):
+    def __init__(self, num_vars=1, labels=None, base_field='QQ', order='grlex'):
         # perform some input validation
         if base_field not in ['QQ','RR','CC'] and type(base_field) is not int:
             raise ValueError('Only allowable fields are QQ, RR, CC, or prime fields')
@@ -35,7 +35,7 @@ class PolynomialRing(Ring):
         self.ordering = MonomialOrdering(
             num_vars=self.num_vars,
             labels=labels,
-            order_type='grlex'
+            order_type=order
         )
 
         self.vars = self.ordering.get_vars()
@@ -48,13 +48,13 @@ class PolynomialRing(Ring):
     def zero(self):
         return Polynomial([self.field.zero()]*self.num_vars, self)
     
-    def random(self, deg=None, denominator_bound=100):
-        if deg is None:
-            deg = randint(0, 20)
-        coefs = [self.field.random(bound=denominator_bound) for _ in range(deg)]
+    def random(self, max_deg=None, denominator_bound=100):
+        if max_deg is None:
+            max_deg = randint(0, 20)
+        coefs = [self.field.random(bound=denominator_bound) for _ in range(max_deg)]
 
         # Just for fun, randomly zero out coefficients
-        for i in range(deg):
+        for i in range(max_deg):
             if randint(0, 2) == 0:
                 coefs[i] = self.field.zero()
         
