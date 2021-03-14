@@ -6,7 +6,7 @@ from groebner.polynomials import PolynomialRing
 class TestAlgorithms:
     def test_buchberger_grlex(self):
         try:
-            R = PolynomialRing(labels=['x','y'])
+            R = PolynomialRing(labels=['x','y'], order='grlex')
             x, y = R.get_vars()
 
             gens = [
@@ -31,7 +31,7 @@ class TestAlgorithms:
     
     def test_division_by_self_grlex(self):
         R = PolynomialRing(labels=['x','y'])
-        f = R.random(deg=20)
+        f = R.random(max_deg=20)
 
         [q], r = division_algorithm(f, [f])
 
@@ -78,12 +78,11 @@ class TestAlgorithms:
     
     def test_random_grlex(self):
         R = PolynomialRing(labels=['x','y','z'])
-        x, y, z = R.get_vars()
 
-        f = R.random(max_deg=20)
-        g = R.random(max_deg=10)
-        h = R.random(max_deg=10)
-        k = R.random(max_deg=10)
+        f = R.random(num_terms=10, max_deg=12, denominator_bound=10)
+        g = R.random(num_terms=10, max_deg=10, denominator_bound=10)
+        h = R.random(num_terms=10, max_deg=10, denominator_bound=10)
+        k = R.random(num_terms=10, max_deg=10, denominator_bound=10)
 
         [d1, d2, d3], r = division_algorithm(f, [g, h, k])
 

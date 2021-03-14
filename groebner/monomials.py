@@ -1,5 +1,6 @@
 from math import factorial
 from warnings import warn
+from random import randint
 
 
 class MonomialOrdering():
@@ -22,8 +23,11 @@ class MonomialOrdering():
                 self.var_labels = list(map(str, labels))
         
         if order_type == 'grlex':
-            self.idx_to_monomial = self._idx_to_mon_grlex
-            self.monomial_to_idx = self._mon_to_idx_grlex
+            self.lt = self._lt_grlex
+        elif order_type == 'lex':
+            self.lt = self._lt_lex
+        elif order_type == 'grevlex':
+            self.lt = self._lt_grevlex
         else:
             raise NotImplementedError('Only implemented for "grlex" ordering.')
         
@@ -42,41 +46,70 @@ class MonomialOrdering():
             vars[self.var_labels[i]] = Monomial(lst, self)
         return vars
     
-    def _mon_to_idx_grlex(self, mon):
-        #TODO 
-        pass
-
-    def _idx_to_mon_grlex(self, idx):
+    def constant_monomial(self):
+        return Monomial([0]*(self.num_vars), self)
+    
+    def random(self, deg_bound=20):
+        degs = []
+        for _ in range(self.num_vars):
+            degs.append(randint(0, deg_bound))
+        return Monomial(degs, self)
+    
+    def _lt_grlex(self, a, b):
+        # We only need less than. The rest can be defined from this.
         try:
-            idx = int(idx)
-        except:
-            raise TypeError('Index must be castable to integer value')
-
-        if idx == 0:
-            return Monomial([0]*self.num_vars, self)
-        
-        degree, remainder = self._get_total_degree(idx)
-        # remainder is between 1 and (n+degree-1)C(n-1), inclusive
-
-        # start off with the "lowest" state and at each step do the thing that 
-        # raises the energy the least
-        base = [0]*(self.num_vars - 1) + [degree]
-        for _ in range(int(remainder) - 1):
-            # find lowest nonzero power
-            lowest_idx = self.num_vars - 1
-            while base[lowest_idx] == 0:
-                lowest_idx -= 1
-
-            # take one from this variable and add one to the next largest
-            base[lowest_idx] -= 1
-            base[lowest_idx - 1] += 1
-
-            # the rest of the elements from the lowest index go to the last var
-            base[-1] = base[lowest_idx]
-            if lowest_idx != len(base) - 1:
-                base[lowest_idx] = 0
-        
-        return Monomial(base, self)
+            assert a.order == b.order
+            # check degree
+            if a.total_degree < b.total_degree:
+                return True
+            elif a.total_degree > b.total_degree:
+                return False
+            else:
+                for i in range(len(a.degrees)):
+                    if a.degrees[i] < b.degrees[i]:
+                        return True
+                    if a.degrees[i] > b.degrees[i]:
+                        return False
+                return False
+        except AttributeError:
+            raise ValueError("Can only compare items of type Monomial.")
+        except (IndexError, AssertionError):
+            raise ValueError("Monomials must be from same order.")
+    
+    def _lt_lex(self, a, b):
+        try:
+            assert a.order == b.order
+            for i in range(len(a.degrees)):
+                if a.degrees[i] < b.degrees[i]:
+                    return True
+                elif a.degrees[i] > b.degrees[i]:
+                    return False
+            return False
+        except AttributeError:
+            raise ValueError("Can only compare items of type Monomial.")
+        except AssertionError:
+            raise ValueError('Monomials must be from same order.')
+    
+    def _lt_grevlex(self, a, b):
+        try:
+            assert a.order == b.order
+            if a.total_degree < b.total_degree:
+                return True
+            elif a.total_degree > b.total_degree:
+                return False
+            else:
+                for i in range(len(a.degrees)):
+                    idx = len(a.degrees) - 1 - i
+                    if a.degrees[idx] < b.degrees[idx]:
+                        # REVERSE the result
+                        return False
+                    elif a.degrees[idx] > b.degrees[idx]:
+                        return True
+                return False
+        except AttributeError:
+            raise ValueError("Can only compare items of type Monomial.")
+        except AssertionError:
+            raise ValueError('Monomials must be from same order.')
         
     def _get_total_degree(self, idx):
         # "spin off" graded pieces (total degree)
@@ -88,6 +121,12 @@ class MonomialOrdering():
             i += 1
         
         return i, idx
+
+    def __contains__(self, other):
+        if type(other) is not Monomial:
+            return False
+        else:
+            return self.__eq__(other.order)
     
     def __eq__(self, other):
         if type(other) is not MonomialOrdering:
@@ -111,36 +150,6 @@ class Monomial():
         self.total_degree = sum(degrees)
         self.order = order
         self.num_vars = self.order.num_vars
-        # TODO self.to_idx = self.order.monomial_to_idx
-    
-    def to_idx(self):
-        # TODO remove this once implemented in the ordering
-        # automatically validates the input
-        base = self.degrees[:]
-        total_degree = sum(base)
-
-        # This will be the same process but reverse
-        remainder = 0
-        while base[-1] < total_degree:
-            remainder += 1
-            # find lowest nonzero power (besides the last variable)
-            lowest_idx = self.num_vars - 2
-            while base[lowest_idx] == 0:
-                lowest_idx -= 1
-
-            # take one from this variable and add one to the next largest
-            base[lowest_idx] -= 1
-            if self.num_vars - 1 != lowest_idx + 1:
-                base[lowest_idx + 1] += 1 + base[-1]
-                base[-1] = 0
-            else:
-                base[-1] += 1
-
-        idx = 0
-        for i in range(total_degree):
-            idx += self._choose(self.num_vars + i - 1, self.num_vars - 1)
-        
-        return int(idx + remainder)
 
     def __mul__(self, other):
         # for now we only allow multiplication with other monomials
@@ -160,9 +169,7 @@ class Monomial():
         return self.degrees == other.degrees and self.order == other.order
     
     def __lt__(self, other):
-        if type(other) is not Monomial:
-            raise TypeError('Can only compare monomials with others.')
-        return self.to_idx() < other.to_idx()
+        return self.order.lt(self, other)
     
     def __le__(self, other):
         return self.__eq__(other) or self.__lt__(other)

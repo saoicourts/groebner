@@ -61,9 +61,8 @@ def _divide_terms(p, q):
     degs = [m[i] - n[i] for i in range(len(m))]
 
     if all([x >= 0 for x in degs]):
-        idx = Monomial(degs, p.LM().order).to_idx()
-        coefs = [p.field.zero() for _ in range(idx)] + [a/b]
-        return Polynomial(coefs, p.ring)
+        mon = Monomial(degs, p.LM().order)
+        return Polynomial({mon: a/b}, p.ring)
     else:
         return None
     

@@ -41,31 +41,35 @@ class PolynomialRing(Ring):
         self.vars = self.ordering.get_vars()
     
     def one(self):
-        return Polynomial(
-            {self.ordering.constant_monomial(): self.field.one()}, 
-            self
-        )
+        coefs = [self.field.zero()]*self.num_vars
+        coefs[0] = self.field.one()
+        return Polynomial(coefs, self)
     
     def zero(self):
-        return Polynomial(
-            {self.ordering.constant_monomial(): self.field.zero()}, 
-            self
-        )
+        return Polynomial([self.field.zero()]*self.num_vars, self)
     
-    def random(self, num_terms=10, max_deg=20, denominator_bound=100):
-        coefs = {}
-        for _ in range(num_terms):
-            mon = self.ordering.random(max_deg)
-            coef = self.field.random(bound=denominator_bound)
-            coefs[mon] = coef
+    def random(self, max_deg=None, denominator_bound=100):
+        if max_deg is None:
+            max_deg = randint(0, 20)
+        coefs = [self.field.random(bound=denominator_bound) for _ in range(max_deg)]
+
+        # Just for fun, randomly zero out coefficients
+        for i in range(max_deg):
+            if randint(0, 2) == 0:
+                coefs[i] = self.field.zero()
         
         return Polynomial(coefs, self)
 
     def get_vars(self):
         # wrap monomials in polynomial wrappers
-        mon_vars = self.ordering.get_vars().values()
+        ret = []
+        for monomial in self.vars.values():
+            idx = monomial.to_idx()
+            coef = [self.field.zero()]*(idx + 1)
+            coef[idx] = self.field.one()
+            ret.append(Polynomial(coef, self))
 
-        return [Polynomial({mon: self.field.one()}, self) for mon in mon_vars]
+        return ret
     
     def coerce(self, x):
         # "coerces" a variable of one type into a polynomial
@@ -73,14 +77,13 @@ class PolynomialRing(Ring):
         if type(x) is Polynomial:
             return x
         elif x in self.field:
-            return Polynomial({self.ordering.constant_monomial(): x}, self)
+            return Polynomial([x], self)
         elif type(x) is Monomial:
-            return Polynomial({x: self.field.one()}, self)
+            idx = x.to_idx()
+            coefs = [self.field.zero()]*idx + [self.field.one()]
+            return Polynomial(coefs, self)
         elif type(x) is int or type(x) is float:
-            return Polynomial(
-                {self.ordering.constant_monomial(): self.field.coerce(x)},
-                self
-            )
+            return Polynomial([self.field.coerce(x)], self)
         else:
             raise ValueError(f"Can't coerce value {x} to Polynomial.")
 
@@ -104,23 +107,12 @@ class Polynomial(RingElement):
         # input validation
         if type(parent_ring) is not PolynomialRing:
             raise ValueError('Parent ring must be an instance of PolynomialRing')
-        if type(coefs) is not dict:
-            raise ValueError('Requires a dict (Monomial => FieldElement')
-        t = sum([y not in parent_ring.ordering for y in coefs.keys()])
-        if t > 0:
-            raise ValueError("Monomials don't come from the same order as parent_ring.")
-        s = sum([x not in parent_ring.field for x in coefs.values()])
+        if type(coefs) is not list:
+            raise ValueError('Requires a list of coefficients in the base field')
+        # s counts the number of coefficients that are not in the right base field
+        s = sum([x not in parent_ring.field for x in coefs])
         if s > 0:
             raise ValueError('Coefficients not in proper field')
-
-        # Don't bother storing zeros
-        to_delete = []
-        for mon in coefs.keys():
-            if coefs[mon] == parent_ring.field.zero():
-                to_delete.append(mon)
-        
-        for mon in to_delete:
-            del coefs[mon]
 
         self.field = parent_ring.field
         self.ring = parent_ring
@@ -129,60 +121,66 @@ class Polynomial(RingElement):
     
     def copy(self):
         return Polynomial(self.coefs, self.ring)
+
+    def _reduce(self):
+        # Reduces the list to have minimal number of entries
+        # amounts to unnecessary computation most of the time, but could save
+        #   memory space eventually. At the moment I rely on it to compute
+        #   the leading terms in a polynomial.
+        for i, coef in reversed(list(enumerate(self.coefs))):
+            if coef != self.field.zero():
+                self.coefs = self.coefs[:i + 1]
+                return
+        # if we got here, we're looking at zero
+        self.coefs = [0]
     
     def _total_deg(self):
-        return self.LM().total_degree
+        self._reduce()
+        return len(self.coefs)
     
     def multidegree(self):
+        self._reduce()
         return self.LM().degrees
     
     def LM(self):
         # Leading monomial
-        return sorted(self.coefs)[-1]
+        self._reduce()
+        return self.order.idx_to_monomial(len(self.coefs) - 1)
     
     def LC(self):
-        return self.coefs[self.LM()]
+        self._reduce()
+        return self.coefs[-1]
     
     def LT(self):
-        return Polynomial({self.LM(): self.LC()}, self.ring)
+        self._reduce()
+        coefs = [self.field.zero()]*(len(self.coefs)-1) + [self.coefs[-1]]
+        return Polynomial(coefs, self.ring)
 
     def __eq__(self, other):
         if type(other) is not Polynomial:
             return False
 
-        # check monomials are the same
-        try:
-            assert set(self.coefs) == set(other.coefs)
-        except AssertionError:
+        # check degrees
+        if self._total_deg() != other._total_deg():
             return False
         
-        # check coefficients match
-        try:
-            for mon in self.coefs:
-                assert self.coefs[mon] == other.coefs[mon]
-        except AssertionError:
-            return False
+        # at this point they should already be reduced from the call to _deg above
+        # diffs counts coefficients where they differ
+        diffs = sum([self.coefs[i] != other.coefs[i] for i in range(self._total_deg())])
         
-        return True
+        return diffs == 0
     
     def __add__(self, other):
         summand = self.ring.coerce(other)
         
-        # get monomials
-        monomials = set(self.coefs).union(set(summand.coefs))
-        coefs = {}
-        for mon in monomials:
-            coef = self.field.zero()
-            if mon in self.coefs:
-                coef += self.coefs[mon]
-            if mon in summand.coefs:
-                coef += summand.coefs[mon]
-
-            # Only add it in if it is nonzero.
-            if coef != self.field.zero():
-                coefs[mon] = coef
-
-        return Polynomial(coefs, self.ring)
+        # fill out lists to make them compatible
+        length = max(len(self.coefs), len(summand.coefs))
+        self.coefs += [self.field.zero()]*(length - len(self.coefs))
+        summand.coefs += [self.field.zero()]*(length - len(summand.coefs))
+        return Polynomial(
+            [self.coefs[i] + summand.coefs[i] for i in range(length)],
+            self.ring
+        )
     
     def __sub__(self, other):
         return self.__add__(-1*other)
@@ -202,18 +200,18 @@ class Polynomial(RingElement):
         return ret
     
     def __mul__(self, other):
-        multiplicand = self.ring.coerce(other)
-        # TODO: there is probably a faster way to do this
-        coefs = {}
-        for mon1 in self.coefs:
-            for mon2 in multiplicand.coefs:
-                new_mon = mon1 * mon2
-                new_coef = self.coefs[mon1] * multiplicand.coefs[mon2]
-
-                if new_mon not in coefs:
-                    coefs[new_mon] = self.field.zero()
-
-                coefs[new_mon] += new_coef
+        p = self.ring.coerce(other)
+        # TODO: there is probably a faster way to do this using degree
+        new_lead = self.LM() * p.LM()
+        coefs = [self.field.zero() for _ in range(new_lead.to_idx() + 1)]
+        for i, c in enumerate(self.coefs):
+            if c != self.field.zero():
+                for j, d in enumerate(p.coefs):
+                    if d != self.field.zero():
+                        mon1 = self.order.idx_to_monomial(i)
+                        mon2 = self.order.idx_to_monomial(j)
+                        target_idx = (mon1 * mon2).to_idx()
+                        coefs[target_idx] += c * d
         return Polynomial(coefs, self.ring)
     
     def __rmul__(self, other):
@@ -222,14 +220,12 @@ class Polynomial(RingElement):
     def __repr__(self):
         s = ''
         first = True
-        for mon in reversed(sorted(self.coefs)):
-            is_constant_term = mon.total_degree == 0
-            coef = self.coefs[mon]
+        for i, coef in reversed(list(enumerate(self.coefs))):
             if coef != 0:
                 if first:
                     if coef == -1:
                         s += '-'
-                    elif coef == 1 and is_constant_term:
+                    elif coef == 1 and i == 0:
                         s += '1'
                     elif coef != 1: 
                         s += str(coef)
@@ -240,7 +236,9 @@ class Polynomial(RingElement):
                     else:
                         s += ' - '
                     
-                    if abs(coef) != 1 or is_constant_term:
+                    if abs(coef) != 1 or i == 0:
                         s += str(abs(coef))
-                s += str(mon)
+                m = self.order.idx_to_monomial(i)
+                s += str(m)
         return s
+    
