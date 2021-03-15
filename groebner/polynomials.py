@@ -113,14 +113,17 @@ class Polynomial(RingElement):
         if s > 0:
             raise ValueError('Coefficients not in proper field')
 
-        # Don't bother storing zeros
-        to_delete = []
-        for mon in coefs.keys():
-            if coefs[mon] == parent_ring.field.zero():
-                to_delete.append(mon)
-        
-        for mon in to_delete:
-            del coefs[mon]
+        # The empty dict is zero
+        if coefs == {}:
+            coefs = parent_ring.zero().coefs
+        else:
+            # remove zeros
+            to_remove = []
+            for mon in coefs:
+                if coefs[mon] == parent_ring.field.zero():
+                    to_remove.append(mon)
+            for mon in to_remove:
+                del coefs[mon]
 
         self.field = parent_ring.field
         self.ring = parent_ring
@@ -165,6 +168,35 @@ class Polynomial(RingElement):
         
         return True
     
+    def __lt__(self, other):
+        try:
+            coefs = set(self.coefs.keys()).union(set(other.coefs.keys()))
+            assert self.ring == other.ring
+
+            for mon in reversed(sorted(coefs)):
+                if mon not in self.coefs:
+                    return True
+                if mon not in other.coefs:
+                    return False
+                if self.coefs[mon] == other.coefs[mon]:
+                    continue
+                else:
+                    return self.coefs[mon] < other.coefs[mon]
+            return False
+        except AttributeError:
+            raise ValueError("Cannot compare Polynomials to non-polynomials.")
+        except AssertionError:
+            raise ValueError("Cannot compare polynomials in different rings.")
+    
+    def __gt__(self, other):
+        return other.__lt__(self)
+    
+    def __ge__(self, other):
+        return self == other or self.__gt__(other)
+    
+    def __le__(self, other):
+        return self == other or self.__le__(other)
+    
     def __add__(self, other):
         summand = self.ring.coerce(other)
         
@@ -183,6 +215,10 @@ class Polynomial(RingElement):
                 coefs[mon] = coef
 
         return Polynomial(coefs, self.ring)
+    
+    def __hash__(self):
+        # piggyback off strings
+        return hash(self.__repr__())
     
     def __sub__(self, other):
         return self.__add__(-1*other)

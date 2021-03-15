@@ -17,8 +17,8 @@ class RationalField(Field):
     def random(self, bound=10**10):
         # returns a "random" (for some definition of random) rational
         # between 0 and 1
-        den = randint(1, bound)
-        num = randint(0, den)
+        den = randint(2, bound)
+        num = randint(1, den)
         return Rational(num, den)
 
     def coerce(self, x):
