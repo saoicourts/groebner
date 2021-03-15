@@ -2,6 +2,7 @@ import pytest
 from groebner import QQ
 from groebner.algorithms import buchberger, division_algorithm
 from groebner.polynomials import PolynomialRing
+from groebner.rationals import Rational
 
 
 
@@ -12,29 +13,25 @@ class TestAlgorithms:
     # Expected inputs and outputs for example 1
 
     def test_buchberger_grlex(self):
-        try:
-            R = PolynomialRing(labels=['x','y'], order='grlex')
-            x, y = R.get_vars()
+        R = PolynomialRing(labels=['x','y'], order='grlex')
+        x, y = R.get_vars()
 
-            gens = [
-                x**3 - 2*x*y,
-                x**2*y - 2*y**2 + x
-            ]
-            true_basis = [
-                x**3 - 2*x*y,
-                x**2*y - 2*y**2 + x,
-                -x**2,
-                -2*x*y,
-                -2*y**2 + x
-            ]
+        gens = [
+            x**3 - 2*x*y,
+            x**2*y - 2*y**2 + x
+        ]
+        true_basis = [
+            x**3 - 2*x*y,
+            x**2*y - 2*y**2 + x,
+            x**2,
+            x*y,
+            y**2 - Rational(1, 2)*x
+        ]
 
-            basis = buchberger(gens)
+        basis = buchberger(gens)
 
-            # TODO if order is correct we can just compare lists.
-            assert set(basis) == set(true_basis)
-        except NotImplementedError:
-            # As long as we acknowledge it's not implemented its no problem
-            pass
+        # TODO if order is correct we can just compare lists.
+        assert basis == true_basis
     
     @pytest.mark.parametrize('order', ORDERINGS)
     def test_division_by_self(self, order):
