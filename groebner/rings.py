@@ -55,8 +55,21 @@ class RingElement:
 
     def __eq__(self, other):
         raise NotImplementedError
+    
+    def __lt__(self, other):
+        # This is optional if you want the ring to be ordered
+        raise NotImplementedError(f'Ordering not implemented for Ring {self.ring}')
 
     # Stuff that just works
+
+    def __le__(self, other):
+        return self.__eq__(other) or self.__lt__(other)
+    
+    def __gt__(self, other):
+        return not self.__le__(other)
+    
+    def __ge__(self, other):
+        return self.__eq__(other) or self.__gt__(other)
 
     def __pow__(self, power):
         try:

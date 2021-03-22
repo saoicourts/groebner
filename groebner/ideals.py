@@ -1,5 +1,5 @@
 from groebner.rings import RingElement
-from groebner.algorithms import buchberger
+from groebner.algorithms import buchberger, division_algorithm
 
 
 class Ideal:
@@ -34,6 +34,7 @@ class IdealFromGenerators(Ideal):
 
         super().__init__(ring)
         self.gens = gens
+        self.ring = ring
 
     def ideal_add(self, other):
         # if we have a list of generators, we just add concatenate them!
@@ -50,5 +51,13 @@ class GroebnerIdeal(IdealFromGenerators):
     def __init__(self, gens):
         # use some algorithm to compute a Groebner basis from the given gens
         self.basis = buchberger(gens)
+        self.ring = gens[0].ring
 
         super().__init__(self.basis)
+    
+    def __contains__(self, other):
+        if other not in self.ring:
+            return False
+        
+        _, r = division_algorithm(other, self.basis)
+        return r == self.ring.zero()

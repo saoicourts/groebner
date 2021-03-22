@@ -47,16 +47,16 @@ might be wrong). Difficulties will be given in the form [a/b] where a is the mat
 - [Basic+/Moderate] Implement Buchberger's algorithm in `src/algorithms.py` to compute
 a Groebner basis given a list of polynomials that generate some ideal. (**Juan/Smart?**)
 - [??/Moderate?] Implement faster/more efficient algorithms for computing Groebner bases.
-- [Basic/Moderate] Implement grevlex (and possibly other) orderings.
-- ~~[Basic/Basic+] Add useful methods to the `Polynomial` class for use in division and Groebner basis computations~~.
-- ~~[Basic+/Moderate] Implement the division algorithm for polynomial rings in multiple indeterminates. Probably should also be in `src/algorithms.py`~~.
+- ~~[Basic/Moderate] Implement grevlex (and possibly other) orderings.~~ **complete**
+- ~~[Basic/Basic+] Add useful methods to the `Polynomial` class for use in division and Groebner basis computations~~. **complete**
+- ~~[Basic+/Moderate] Implement the division algorithm for polynomial rings in multiple indeterminates. Probably should also be in `src/algorithms.py`~~. **complete**
 - [Moderate/Moderate+] Implement new fields to have polynomials over (these should inherit from the `Field` class).
 - [Moderate+/Moderate+] Continue to flush out implementations for ideals so that they work as expected to the end user.
 - [Trivial/Moderate] Write unit tests for everything to be tested against. (**Nico**)
     - `rationals` **complete**
     - `monomials` **complete**
-    - `algorithms` *partially complete* (only have a single test for buchberger atm but should be expanded to include future implementations)
-    - `polynomials` to-do
+    - `algorithms` **complete** (for now)
+    - `polynomials` **complete**
     - `ideals` to-do
 
 ## Questions/Comments

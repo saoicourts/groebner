@@ -1,40 +1,94 @@
 import pytest
-from groebner import QQ
-from groebner.algorithms import buchberger, division_algorithm
+from groebner.algorithms import buchberger, division_algorithm, is_groebner, buchberger_fast
 from groebner.polynomials import PolynomialRing
-
+from groebner.rationals import Rational
 
 
 class TestAlgorithms:
     # Here we set what orderings we want to test below
     ORDERINGS = ['lex', 'grlex', 'grevlex']
 
-    # Expected inputs and outputs for example 1
+    @pytest.mark.parametrize('order', ORDERINGS)
+    def test_buchberger(self, order):
+        R = PolynomialRing(labels=['x','y'], order=order)
+        x, y = R.get_vars()
 
-    def test_buchberger_grlex(self):
-        try:
-            R = PolynomialRing(labels=['x','y'], order='grlex')
-            x, y = R.get_vars()
+        gens = [
+            x**3 - 2*x*y,
+            x**2*y - 2*y**2 + x
+        ]
 
-            gens = [
-                x**3 - 2*x*y,
-                x**2*y - 2*y**2 + x
-            ]
-            true_basis = [
-                x**3 - 2*x*y,
-                x**2*y - 2*y**2 + x,
-                -x**2,
-                -2*x*y,
-                -2*y**2 + x
-            ]
+        # the simplest (reduced) bases I have found
+        if order == 'lex':
+            true_basis = [x - 2*y**2, y**3]
+        else:
+            true_basis = [x**2, x*y, y**2 - Rational(1, 2)*x]
 
-            basis = buchberger(gens)
+        basis = buchberger(gens)
 
-            # TODO if order is correct we can just compare lists.
-            assert set(basis) == set(true_basis)
-        except NotImplementedError:
-            # As long as we acknowledge it's not implemented its no problem
-            pass
+        # make sure it is actually a groebner basis
+        assert is_groebner(basis)
+
+        # show they generate the same ideal
+        for elm in basis:
+            _, r = division_algorithm(elm, true_basis)
+            assert r == 0
+
+        for elm in true_basis:
+            _, r = division_algorithm(elm, basis)
+            assert r == 0
+    
+    @pytest.mark.parametrize('order', ORDERINGS)
+    def test_buchberger_variants_fixed(self, order):
+        R = PolynomialRing(labels=['x','y'], order=order)
+        x, y = R.get_vars()
+        f = 2*x**2*y + 2*x**2 + y**2
+        g = x**2*y**2 + 2*x**2 + 2*x*y**2 + 2*x*y + 1
+
+        # get different bases with different methods
+        basis1 = buchberger([f, g])
+        basis2 = buchberger_fast([f, g])
+
+        # check they are groebner bases
+        assert is_groebner(basis1)
+        assert is_groebner(basis2)
+
+        # check ideal containment in a circular way
+        for elm in basis1:
+            _, r = division_algorithm(elm, basis2)
+            assert r == 0
+
+        for elm in basis2:
+            _, r = division_algorithm(elm, basis1)
+            assert r == 0
+    
+    @pytest.mark.parametrize('order', ORDERINGS)
+    def test_buchberger_variants_variable(self, order):
+        R = PolynomialRing(labels=['x','y'], order=order)
+        f = R.random(num_terms=5, max_deg=3, denominator_bound=3)
+        g = R.random(num_terms=5, max_deg=3, denominator_bound=3)
+
+        if f == f.ring.zero():
+            f += 1
+        if g == g.ring.zero():
+            g += 1
+
+        # get different bases with different methods
+        basis1 = buchberger([f, g])
+        basis2 = buchberger_fast([f, g])
+
+        # check they are groebner bases
+        assert is_groebner(basis1)
+        assert is_groebner(basis2)
+
+        # check ideal containment in a circular way
+        for elm in basis1:
+            _, r = division_algorithm(elm, basis2)
+            assert r == 0
+
+        for elm in basis2:
+            _, r = division_algorithm(elm, basis1)
+            assert r == 0
     
     @pytest.mark.parametrize('order', ORDERINGS)
     def test_division_by_self(self, order):
