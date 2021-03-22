@@ -5,7 +5,6 @@ from groebner.polynomials import PolynomialRing
 from groebner.rationals import Rational
 
 
-
 class TestAlgorithms:
     # Here we set what orderings we want to test below
     ORDERINGS = ['lex', 'grlex', 'grevlex']
