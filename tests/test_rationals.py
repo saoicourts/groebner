@@ -23,9 +23,6 @@ def rand_den():
         RATIONAL_UPPER_LIMIT
     )
 
-def rand_rational():
-    return Rational(rand_num(), rand_den())
-
 # Tests
 
 class TestRationals:
@@ -45,7 +42,7 @@ class TestRationals:
             assert x * QQ.one() == Rational(x, 1)
     
     def test_mult_inverses(self):
-        r = rand_rational()
+        r = QQ.random()
         assert r * r.mul_inv() == QQ.one()
     
     def test_add_inverses(self):
@@ -54,20 +51,20 @@ class TestRationals:
         assert Rational(num, den) + Rational(-num, den) == QQ.zero()
     
     def test_multiplicative_unit(self):
-        r = rand_rational()
+        r = QQ.random()
         assert r * QQ.one() == r
     
     def test_additive_unit(self):
-        r = rand_rational()
+        r = QQ.random()
         assert r + QQ.zero() == r
     
     def test_mult_zero(self):
-        r = rand_rational()
+        r = QQ.random()
         assert r * QQ.zero() == QQ.zero()
 
     def test_div_zero(self):
         with pytest.raises(ZeroDivisionError):
-            rand_rational() / 0
+            QQ.random() / 0
     
     def test_zero_denominator(self):
         with pytest.raises(ZeroDivisionError):

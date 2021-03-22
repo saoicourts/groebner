@@ -147,19 +147,21 @@ class Polynomial(RingElement):
         return Polynomial({self.LM(): self.LC()}, self.ring)
 
     def __eq__(self, other):
-        if type(other) is not Polynomial:
-            return False
+        try:
+            o = self.ring.coerce(other)
+        except ValueError as e:
+            raise e
 
         # check monomials are the same
         try:
-            assert set(self.coefs) == set(other.coefs)
+            assert set(self.coefs) == set(o.coefs)
         except AssertionError:
             return False
         
         # check coefficients match
         try:
             for mon in self.coefs:
-                assert self.coefs[mon] == other.coefs[mon]
+                assert self.coefs[mon] == o.coefs[mon]
         except AssertionError:
             return False
         

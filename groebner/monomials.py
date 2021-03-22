@@ -29,7 +29,7 @@ class MonomialOrdering():
         elif order_type == 'grevlex':
             self.lt = self._lt_grevlex
         else:
-            raise NotImplementedError('Only implemented for "grlex" ordering.')
+            raise NotImplementedError('Only implemented for "lex", "grlex", and "grevlex" orderings.')
         
         # TODO Implement grevlex, which should be faster.
 

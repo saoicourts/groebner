@@ -54,12 +54,19 @@ class TestMonomials:
     def test_monomial_instantiation(self):
         o = MonomialOrdering(num_vars=4, labels=['x','y','z','w'])
         for _ in range(5):
-            a = randint(0, 1000)
-            b = randint(0, 1000)
-            c = randint(0, 1000)
-            d = randint(0, 1000)
+            a = randint(0, 100)
+            b = randint(0, 100)
+            c = randint(0, 100)
+            d = randint(0, 100)
 
-            target_string = f'x^{a}y^{b}z^{c}w^{d}'
+            target_string = ''
+            for lbl, var in [('x', a), ('y', b), ('z', c), ('w', d)]:
+                if var > 0:
+                    if var == 1:
+                        target_string += lbl
+                    else:
+                        target_string += f'{lbl}^{var}'
+
             m = Monomial([a,b,c,d], o)
 
             assert str(m) == target_string

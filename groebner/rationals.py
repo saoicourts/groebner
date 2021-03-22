@@ -17,9 +17,10 @@ class RationalField(Field):
     def random(self, bound=10**10):
         # returns a "random" (for some definition of random) rational
         # between 0 and 1
+        sgn = (-1)**randint(0, 1)
         den = randint(1, bound)
         num = randint(0, den)
-        return Rational(num, den)
+        return Rational(sgn*num, den)
 
     def coerce(self, x):
         # "coerces" a variable of one type into a Rational
@@ -42,6 +43,7 @@ class RationalField(Field):
             for i in range(1, 10**7):
                 if int(i*x) == i*x:
                     return Rational(int(i*x), i)
+            raise ValueError(f"Can't coerce value {x} to Rational.")
         else:
             raise ValueError(f"Can't coerce value {x} to Rational.")
     
