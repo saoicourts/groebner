@@ -1,5 +1,6 @@
 from groebner.monomials import Monomial
 from groebner.polynomials import Polynomial
+from itertools import permutations
 
 def buchberger(gens):
     # gens is a list of polynomials
@@ -51,7 +52,6 @@ def reduced_buchberger(gens):
 def buchberger_fast(gens):
     tuples = [(i, j) for i in range(len(gens)) for j in range(len(gens)) if j > i]
     G = gens.copy()
-    t = len(G) - 1
     while len(tuples) != 0:
         i, j = tuples[0]
         l = lcm(G[i].LM(), G[j].LM())
@@ -60,43 +60,12 @@ def buchberger_fast(gens):
         if (l != p and not criterion(i, j, tuples, G)):
             _, r = division_algorithm(s_poly(G[i], G[j]), G)
             if r != r.ring.zero():
-                t += 1
-                G.append(r)
-                new_idx = [(i, t) for i in range(t-1)]
-                tuples = tuples + new_idx
-        tuples.remove((i,j))
-    return G
-
-def buchberger_fast_reduce(gens):
-    gens = reduce(gens)
-
-    tuples = [(i, j) for i in range(len(gens)) for j in range(len(gens)) if j > i]
-    G = gens.copy()
-    t = len(G) - 1
-    while len(tuples) != 0:
-        i, j = tuples[0]
-        l = lcm(G[i].LM(), G[j].LM())
-        p = G[i].LM()*G[j].LM()
-        p = Polynomial({p: G[i].field.one()}, G[i].ring)
-        if (l != p and not criterion(i, j, tuples, G)):
-            _, r = division_algorithm(s_poly(G[i], G[j]), G)
-            if r != r.ring.zero():
-                t += 1
-                G_replacement = []
-                for g in G:
-                    _, new_g = division_algorithm(g, r)
-                    if new_g != r.ring.zero():
-                        # make leading coefficient one
-                        new_g = new_g * new_g.LC()**(-1)
-                        if new_g not in G_replacement:
-                            G_replacement.append(new_g)
-                G = G_replacement
                 # make leading coefficient one
                 r = r * r.LC()**(-1)
                 if r not in G:
                     G.append(r)
-                new_idx = [(i, t) for i in range(t-1)]
-                tuples = tuples + new_idx
+                    new_idx = [(i, len(G) - 1) for i in range(len(G) - 1)]
+                    tuples = tuples + new_idx
         tuples.remove((i,j))
     return sorted(G)
 
@@ -106,10 +75,13 @@ def criterion(i, j, B, G):
             if (i, k) in B or (k,i) in B or (j, k) in B or (k,j) in B:
                 continue
             else:
-                l = lcm(G[i].LM(), G[j].LM()).degrees
-                m = G[k].LM().degrees
-                errors = [l[x] < m[x] for x in range(len(l))]
-                if sum(errors) > 0:
+                m = G[k].LT()
+                l = Polynomial(
+                    {lcm(G[i].LM(), G[j].LM()): m.field.one()},
+                    m.ring
+                )
+                d = _divide_terms(l, m)
+                if d is None:
                     continue
                 else:
                     # got it
@@ -118,6 +90,7 @@ def criterion(i, j, B, G):
 
 
 def reduce(polys):
+    # Stolen graciously from Sage
     G = set(polys)
     while True:
         G_bar = set(G)
@@ -152,13 +125,25 @@ def s_poly(f, g):
 
     return _divide_terms(mon_poly, f.LT())*f - _divide_terms(mon_poly, g.LT())*g
 
+def is_groebner(gens):
+    for i in range(len(gens) - 1):
+        for j in range(i, len(gens)):
+            found_division = False
+            for perm in permutations(gens):
+                _, r = division_algorithm(s_poly(gens[i], gens[j]), list(perm))
+                if r == 0:
+                    found_division = True
+                    break
+            if not found_division:
+                return False
+    return True
+
 # Division 
 
 def division_algorithm(dividend, divisors):
     """Runs the generalized division algorithm using polynomials in multiple variables"""
     # Input validation
     ring = dividend.ring
-    field = ring.field
 
     if type(divisors) is not list:
         divs = [divisors]

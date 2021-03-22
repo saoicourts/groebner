@@ -1,34 +1,28 @@
 from groebner.rationals import RationalField as QQ
 from groebner.monomials import MonomialOrdering, Monomial
 from groebner.rings import Ring, RingElement
+from groebner.fields import Field
 from random import randint
 
 
 class PolynomialRing(Ring):
     """Represents a polynomial in some number of variables over a variety of
-        fields. For base field use 'QQ', 'RR', 'CC', or an integer p designating
-        the prime field F_p."""
+        fields. For base field pass an instance of the Field class."""
 
-    def __init__(self, num_vars=1, labels=None, base_field='QQ', order='grlex'):
-        # perform some input validation
-        if base_field not in ['QQ','RR','CC'] and type(base_field) is not int:
-            raise ValueError('Only allowable fields are QQ, RR, CC, or prime fields')
+    def __init__(self, num_vars=1, labels=None, base_field=QQ(), order='grlex'):
+        # perform input validation
+        if not isinstance(base_field, Field):
+            raise TypeError("Parameter base_field must inherit from the Field"
+                            " class.")
         
-        # TODO: add more fields
-        if base_field == 'QQ':
-            self.field = QQ()
-        else:
-            raise NotImplementedError()
+        self.field = base_field
         
         # save a list of symbols we'll be using
         if labels is None:
             self.num_vars = num_vars
         else:
-            errs = sum([type(x) is not str for x in labels])
-            if type(labels) is list and errs == 0:
-                self.num_vars = len(labels)
-            else:
-                raise TypeError('Parameter `vars` must be a list of strs.')
+            labels = [str(x) for x in labels]
+            self.num_vars = len(labels)
 
         # For now we're going to use the graded lexicographical ordering
         # https://en.wikipedia.org/wiki/Monomial_order#Graded_lexicographic_order
@@ -85,7 +79,7 @@ class PolynomialRing(Ring):
             raise ValueError(f"Can't coerce value {x} to Polynomial.")
 
     def __repr__(self):
-        return f'Polynomial ring over {self.field} with indeterminates {list(self.vars.values())}.'
+        return f'Polynomial ring over {self.field} with indeterminates {list(self.vars.values())}'
     
     def __contains__(self, other):
         if type(other) is not Polynomial:
@@ -113,17 +107,16 @@ class Polynomial(RingElement):
         if s > 0:
             raise ValueError('Coefficients not in proper field')
 
-        # The empty dict is zero
+        # remove zeros
+        to_remove = []
+        for mon in coefs:
+            if coefs[mon] == parent_ring.field.zero():
+                to_remove.append(mon)
+        for mon in to_remove:
+            del coefs[mon]
+        # if we've removed everything, we're zero
         if coefs == {}:
-            coefs = parent_ring.zero().coefs
-        else:
-            # remove zeros
-            to_remove = []
-            for mon in coefs:
-                if coefs[mon] == parent_ring.field.zero():
-                    to_remove.append(mon)
-            for mon in to_remove:
-                del coefs[mon]
+            coefs = {parent_ring.ordering.constant_monomial(): parent_ring.field.zero()}         
 
         self.field = parent_ring.field
         self.ring = parent_ring
@@ -190,15 +183,6 @@ class Polynomial(RingElement):
         except AssertionError:
             raise ValueError("Cannot compare polynomials in different rings.")
     
-    def __gt__(self, other):
-        return other.__lt__(self)
-    
-    def __ge__(self, other):
-        return self == other or self.__gt__(other)
-    
-    def __le__(self, other):
-        return self == other or self.__le__(other)
-    
     def __add__(self, other):
         summand = self.ring.coerce(other)
         
@@ -263,7 +247,7 @@ class Polynomial(RingElement):
         for mon in reversed(sorted(self.coefs)):
             is_constant_term = mon.total_degree == 0
             coef = self.coefs[mon]
-            if coef != 0:
+            if coef != 0 or is_constant_term:
                 if first:
                     if coef == -1:
                         s += '-'
