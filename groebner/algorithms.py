@@ -6,11 +6,16 @@ def buchberger(gens):
     # we want to return a list containing a Groebner basis (extending gens)
     raise NotImplementedError
 
+def buchberger_fast(gens):
+    raise NotImplementedError
+
+def is_groebner(basis):
+    raise NotImplementedError
+
 def division_algorithm(dividend, divisors):
     """Runs the generalized division algorithm using polynomials in multiple variables"""
     # Input validation
     ring = dividend.ring
-    field = ring.field
 
     if type(divisors) is not list:
         divs = [divisors]
