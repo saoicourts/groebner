@@ -67,7 +67,7 @@ def buchberger_fast(gens):
                     new_idx = [(i, len(G) - 1) for i in range(len(G) - 1)]
                     tuples = tuples + new_idx
         tuples.remove((i,j))
-    return sorted(G)
+    return reduce(G)
 
 def criterion(i, j, B, G):
     for k in range(len(G)):
